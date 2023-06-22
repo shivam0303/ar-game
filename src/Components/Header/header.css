@@ -1,0 +1,12 @@
+.titleMain{
+    font-size: 2rem;
+    font-weight: bold;
+    font-family: 'Rubik Iso', cursive;
+    color: Black;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    width:90%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}

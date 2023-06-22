@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.rawgit.com/donmccurdy/aframe-extras/v6.1.1/dist/aframe-extras.min.js"></script>
+    <script src="https://cdn.rawgit.com/donmccurdy/aframe-extras/v6.1.1/dist/aframe-extras.physics.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-face-aframe.prod.js"></script>
+    <script>
+      AFRAME.registerComponent('foo', {
+          init: function () {
+            this.el.addEventListener('hit', (e) => {
+              console.log(e)
+            })
+            this.el.addEventListener('hitend', (e) => {
+              console.log('hitend')
+              console.log(e)
+            })
+          }
+        })
+      document.addEventListener("DOMContentLoaded", function () {
+        const sceneEl = document.querySelector("a-scene");
+        let arSystem;
+        let sphere;
+        let obstacle;
+        let isCollision = false;
+
+        sceneEl.addEventListener("renderstart", (event) => {
+          if (!isCollision) {
+            const spherePosition = sphere.object3D.position;
+            const obstaclePosition = obstacle.object3D.position;
+
+            const distance = Math.sqrt(
+              Math.pow(spherePosition.x - obstaclePosition.x, 2) +
+                Math.pow(spherePosition.y - obstaclePosition.y, 2) +
+                Math.pow(spherePosition.z - obstaclePosition.z, 2)
+            );
+
+            if (distance <= 0.5) {
+              isCollision = true;
+              alert("Collision");
+              arSystem.stop();
+              stopObstacle();
+            }
+
+            if (
+              Math.abs(spherePosition.x) >= 50 ||
+              Math.abs(spherePosition.y) >= 50 ||
+              Math.abs(spherePosition.z) >= 50
+            ) {
+              isCollision = true;
+              alert("Boundary Reached!");
+              arSystem.stop();
+              stopObstacle();
+            }
+          }
+        });
+
+        sceneEl.addEventListener("loaded", function () {
+          arSystem = sceneEl.systems["mindar-face-system"];
+          sphere = document.querySelector("#sphere");
+          obstacle = document.querySelector("#obstacle");
+        });
+
+        sceneEl.addEventListener("arReady", (event) => {
+          console.log("AR ready");
+        });
+
+        sceneEl.addEventListener("targetFound", (event) => {
+          console.log("Target found");
+        });
+
+        sceneEl.addEventListener("targetLost", (event) => {
+          console.log("Target lost");
+        });
+
+        sceneEl.addEventListener("arError", (event) => {
+          console.log("AR error");
+        });
+
+        const startButton = document.querySelector("#example-start-button");
+        startButton.addEventListener("click", () => {
+          arSystem.start();
+          moveObstacle();
+        });
+
+        const stopButton = document.querySelector("#example-stop-button");
+        stopButton.addEventListener("click", () => {
+          arSystem.stop();
+          stopObstacle();
+        });
+
+        const switchCameraButton = document.querySelector("#example-switch-camera-button");
+        switchCameraButton.addEventListener("click", () => {
+          arSystem.switchCamera();
+        });
+
+        sceneEl.addEventListener("arBeforeRender", (event) => {
+          const headPosition = sceneEl.camera.getWorldPosition();
+          sphere.object3D.position.copy(headPosition);
+        });
+        
+        function moveObstacle() {
+          obstacle.setAttribute("animation", {
+            property: "position",
+            to: "2 0 -5",
+            dur: 2000,
+            loop: true,
+            dir: "alternate",
+          });
+        }
+
+        function stopObstacle() {
+          obstacle.removeAttribute("animation");
+        }
+      });
+    </script>
+    <style>
+      body {
+        margin: 0;
+      }
+      .example-container {
+        overflow: hidden;
+        position: absolute;
+        width: 100%;
+        height: 100%;
+      }
+      #example-control-overlay {
+        position: fixed;
+        top: 0;
+        right: 0;
+        background: none;
+        height: 30px;
+        z-index: 2;
+      }
+      #example-control-overlay > div {
+        position: absolute;
+        right: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="example-container">
+      <div id="example-control-overlay" class="overlay">
+        <div>
+          <button id="example-start-button">Start</button>
+          <button id="example-stop-button">Stop</button>
+          <button id="example-switch-camera-button">Switch Camera</button>
+        </div>
+      </div>
+      <a-scene
+        mindar-face="autoStart: false"
+        embedded
+        color-space="sRGB"
+        renderer="colorManagement: true, physicallyCorrectLights"
+        vr-mode-ui="enabled: false"
+        device-orientation-permission-ui="enabled: false"
+      >
+        <a-camera active="false" position="0 0 0" look-controls="false"></a-camera>
+        <a-entity mindar-face-target="anchorIndex: 1">
+          <a-sphere id="collision-object" color="green" radius="0.1"></a-sphere>
+          <a-box
+          id="obstacle"
+          position="-2 0 -5"
+          geometry="primitive: box; width: 0.5; height: 0.5; depth: 0.5"
+          material="color: red"
+          dynamic-body
+          foo
+        ></a-box>
+        </a-entity>
+      </a-scene>
+    </div>
+
+  </body>
+</html>
